@@ -1,4 +1,8 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.Scanner;
 
 public class Main {
@@ -97,7 +101,7 @@ public class Main {
                     deleteAllTables(con);
                     break;
                 case "3":
-                    // lib(con);
+                    loadDataFromFolder(con, scanner);
                     break;
                 case "4":
 
@@ -149,7 +153,75 @@ public class Main {
             System.out.println("Error deleting tables: " + e.getMessage());
         }
     }
+    //5.1.3 Load data from a dataset
+    public static void loadDataFromFolder(Connection con , Scanner scanner) {
+        try{
+            // Scanner scanner = new Scanner(System.in);
+            System.out.print("Type in the Source Data Folder Path: ");
+            String folderPath = scanner.nextLine();
+            loadDataFromFile(con, folderPath + "/category.txt", "category");
+            loadDataFromFile(con, folderPath + "/manufacturer.txt", "manufacturer");
+            loadDataFromFile(con, folderPath + "/part.txt", "part");
+            loadDataFromFile(con, folderPath + "/salesperson.txt", "salesperson");
+            loadDataFromFile(con, folderPath + "/transaction.txt", "transaction");
+            System.out.println("Processing...Done! Data is inputted to the database!");
+            // scanner.close();
+        }catch (SQLException e) {
+            System.out.println("Error loading data: " + e.getMessage());
+        }catch (IllegalArgumentException e) {
+            System.out.println("Error loading data: " + e.getMessage());
+        }
+        
+    }
+    private static void loadDataFromFile(Connection con, String filePath, String tableName) throws SQLException {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(new File(filePath))) ;
+            String line;
+            String[] values;
+            String toBeExecutedSQL;
 
+            while ((line = reader.readLine()) != null) {
+                values = line.split("\t"); // Split by tab
 
+                switch (tableName) {
+                    case "category":
+                        toBeExecutedSQL = "INSERT INTO category (cID, cName) VALUES (?, ?)";
+                        break;
+                    case "manufacturer":
+                        toBeExecutedSQL = "INSERT INTO manufacturer (mID, mName, mAddress, mPhoneNumber) VALUES (?, ?, ?, ?)";
+                        break;
+                    case "part":
+                        toBeExecutedSQL = "INSERT INTO part (pID, pName, pPrice, mID, cID, pWarrantyPeriod, pAvailableQuantity) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                        break;
+                    case "salesperson":
+                        toBeExecutedSQL = "INSERT INTO salesperson (sID, sName, sAddress, sPhoneNumber, sExperience) VALUES (?, ?, ?, ?, ?)";
+                        break;
+                    case "transaction":
+                        toBeExecutedSQL = "INSERT INTO transaction (tID, pID, sID, tDate) VALUES (?, ?, ?, ?)";
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid table name: " + tableName);
+                }
+
+                PreparedStatement stmt = con.prepareStatement(toBeExecutedSQL);
+                for (int i = 0; i < values.length; i++) {
+                    if (i == 3 && tableName.equals("transaction")) {
+                        // Convert the date format to YYYY-MM-DD to stored it in database type date
+                        SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy");
+                        Date date = new Date(inputFormat.parse(values[i]).getTime());
+                        stmt.setDate(i + 1, date);
+                    } else {
+                        stmt.setString(i + 1, values[i]);
+                    }
+                }
+                stmt.executeUpdate();
+                stmt.close();
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+            throw new SQLException("Error loading data from file: " + filePath, e);
+        }
+    }
+    //5.1.4 Show the content of a specified table:
 
 }
