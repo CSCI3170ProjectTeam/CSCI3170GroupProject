@@ -64,10 +64,10 @@ public class Main {
                     adminMenu(con, scanner);
                     break;
                 case "2":
-                    // salespersonMenu(con);
+                    // salespersonMenu(con, scanner);
                     break;
                 case "3":
-                    // manager(con);
+                    // managerMenu(con, scanner);
                     break;
                 case "4":
                     exit = true;
@@ -104,7 +104,7 @@ public class Main {
                     loadDataFromFolder(con, scanner);
                     break;
                 case "4":
-
+                    showTable(con, scanner);
                     break;
                 case "5":
                     returnToMainMenu = true;
@@ -154,7 +154,7 @@ public class Main {
         }
     }
     //5.1.3 Load data from a dataset
-    public static void loadDataFromFolder(Connection con , Scanner scanner) {
+    public static void loadDataFromFolder(Connection con, Scanner scanner) {
         try{
             // Scanner scanner = new Scanner(System.in);
             System.out.print("Type in the Source Data Folder Path: ");
@@ -223,5 +223,51 @@ public class Main {
         }
     }
     //5.1.4 Show the content of a specified table:
+    public static void showTable(Connection con, Scanner scanner){
+        try{
+            System.out.print("Which table would you like to show: ");
+            String tableName = scanner.nextLine();
+            showTableContent(con, tableName);
+        }catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+    public static void showTableContent(Connection con, String tableName) {
+        try {
+            Statement stmt = con.createStatement();
+            String query = "SELECT * FROM " + tableName;
+            ResultSet result = stmt.executeQuery(query);
+            System.out.println("Content of table part:");
+            // Get column names
+            ResultSetMetaData rsmd = result.getMetaData();
+            int columnCount = rsmd.getColumnCount();
+            for (int i = 1; i <= columnCount; i++) {
+                System.out.print("| " + rsmd.getColumnName(i) + " ");
+            }
+            System.out.println("|");
 
+            // Print records
+            while (result.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    String value = result.getString(i);
+                    if (rsmd.getColumnTypeName(i).equalsIgnoreCase("date")) {
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                        value = dateFormat.format(result.getDate(i));
+                    }
+                    System.out.print("| " + value + " ");
+                }
+                System.out.println("|");
+            }
+            result.close();
+            stmt.close();
+        } catch (SQLException e) {
+            System.out.println("Error retrieving table content: " + e.getMessage());
+        }
+    }
+
+    //5.2
+    // public static void salespersonMenu(Connection con, Scanner scanner){ }
+        
+    //5.3
+    // public static void managerMenu(Connection con, Scanner scanner){ }
 }
