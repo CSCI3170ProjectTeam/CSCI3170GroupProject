@@ -300,7 +300,7 @@ public class Main {
                     sellPart(con, scanner);
                     break;
                 case "3":
-                    mainMenu(con, scanner);
+                    returnToMainMenu = true;
                     break;
                 default:
                     System.out.println("Invaild input");
