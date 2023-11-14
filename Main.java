@@ -317,31 +317,26 @@ public class Main {
             System.out.println("1. Part Name");
             System.out.println("2. Manufacturer Name");
             System.out.print("Choose the search criterion: ");
-            String searchCriterion1 = scanner.nextInt() == 1 ? "pName" : "mName";
-            System.out.print("\nType in the Search Keyword: ");
+            String searchCriterion1 = scanner.nextLine().equals("1") ? "pName" : "mName";
+            System.out.print("Type in the Search Keyword: ");
             String searchKeyWord = scanner.nextLine();
             System.out.println("Choose ordering: ");
             System.out.println("1. By price, ascending order");
             System.out.println("2. By price, descending order ");
-            System.out.print("Choose the search criterion");
-            String searchCriterion2 = scanner.nextInt() == 1 ? "asc" : "desc";
+            System.out.print("Choose the search criterion: ");
+            String searchCriterion2 = scanner.nextLine().equals("1") ? "ASC" : "DESC";
 
             // retrive the result
             Statement stmt = con.createStatement();
             String query = String.format(
-                    "SELECT part.pID AS ID, part.pName AS Name, manufacturer.mNAME AS Manufacturer, category.cNAME AS Category, part.pAvailableQuantity AS Quantity, part.pWarrantyPeriod AS Warranty, part.pPrice AS Price FROM part INNER JOIN manufacturer ON part.mID = manufacturer.mID INNER JOIN category ON part.cID = category.cID WHERE %s = %s ORDER BY part.pPrice %s",
+                    "SELECT part.pID, part.pName, manufacturer.mNAME, category.cNAME, part.pAvailableQuantity, part.pWarrantyPeriod, part.pPrice FROM part INNER JOIN manufacturer ON part.mID = manufacturer.mID INNER JOIN category ON part.cID = category.cID WHERE %s = '%s' ORDER BY part.pPrice %s",
                     searchCriterion1, searchKeyWord, searchCriterion2);
             ResultSet result = stmt.executeQuery(query);
 
             // print the result
-            ResultSetMetaData rsmd = result.getMetaData();
-            int columnCount = rsmd.getColumnCount();
-            for (int i = 1; i <= columnCount; i++) {
-                System.out.print("| " + rsmd.getColumnName(i) + " ");
-            }
-            System.out.println("|");
+            System.out.println("| ID | Name | Manufacturer | Category | Quantity | Warranty | Price |");
             while (result.next()) {
-                for (int i = 1; i <= columnCount; i++) {
+                for (int i = 1; i <= 7; i++) {
                     String value = result.getString(i);
                     System.out.print("| " + value + " ");
                 }
@@ -364,10 +359,13 @@ public class Main {
             String salespersonID = scanner.nextLine();
 
             // check if the part is not available; if so, it cannot be sold
-            Statement stmt = con.createStatement();
+            Statement stmt1 = con.createStatement();
+            Statement stmt2 = con.createStatement();
+            Statement stmt3 = con.createStatement();
             String query1 = String.format("SELECT part.pAvailableQuantity, part.pName FROM part WHERE part.pID = %s",
                     partID);
-            ResultSet result = stmt.executeQuery(query1);
+            ResultSet result = stmt1.executeQuery(query1);
+            result.next();
             int remaningQuantity = Integer.valueOf(result.getString(1));
             if (remaningQuantity <= 0) {
                 System.out.println("Error: Part Is Unavailable!");
@@ -376,7 +374,7 @@ public class Main {
                 // update part quantity
                 String query2 = String.format("UPDATE part SET part.pAvailableQuantity = %d WHERE part.pID = %s",
                         remaningQuantity - 1, partID);
-                stmt.executeQuery(query2);
+                stmt2.executeUpdate(query2);
                 System.out
                         .println(String.format("Product: %s(id: %s) Remaining Quality: %d", result.getString(2), partID,
                                 remaningQuantity - 1));
@@ -385,11 +383,13 @@ public class Main {
                 Date date = new Date();
                 String query3 = String.format("INSERT INTO transaction (pID, sID, tDate) VALUES (%s, %s, %s)", partID,
                         salespersonID, formatter.format(date));
-                stmt.executeQuery(query3);
+                stmt3.executeUpdate(query3);
 
             }
             result.close();
-            stmt.close();
+            stmt1.close();
+            stmt2.close();
+            stmt3.close();
         } catch (SQLException e) {
             System.out.println("Error selling part: " + e.getMessage());
         }
