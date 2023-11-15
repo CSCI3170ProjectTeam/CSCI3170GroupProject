@@ -4,7 +4,7 @@ import java.io.FileReader;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Scanner;
-import java.util.Date;
+import java.util.Calendar;
 
 public class Main {
 
@@ -68,7 +68,7 @@ public class Main {
                     salespersonMenu(con, scanner);
                     break;
                 case "3":
-                    // managerMenu(con, scanner);
+                    managerMenu(con, scanner);
                     break;
                 case "4":
                     exit = true;
@@ -361,7 +361,6 @@ public class Main {
             // check if the part is not available; if so, it cannot be sold
             Statement stmt1 = con.createStatement();
             Statement stmt2 = con.createStatement();
-            Statement stmt3 = con.createStatement();
             String query1 = String.format("SELECT part.pAvailableQuantity, part.pName FROM part WHERE part.pID = %s",
                     partID);
             ResultSet result = stmt1.executeQuery(query1);
@@ -379,22 +378,204 @@ public class Main {
                         .println(String.format("Product: %s(id: %s) Remaining Quality: %d", result.getString(2), partID,
                                 remaningQuantity - 1));
                 // insert new transaction record
-                SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-                Date date = new Date();
-                String query3 = String.format("INSERT INTO transaction (pID, sID, tDate) VALUES (%s, %s, %s)", partID,
-                        salespersonID, formatter.format(date));
-                stmt3.executeUpdate(query3);
+                String toBeExecutedSQL = "INSERT INTO transaction (pID, sID, tDate) VALUES (?, ?, ?)";
+                PreparedStatement stmt3 = con.prepareStatement(toBeExecutedSQL);
+                // SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+                stmt3.setString(1, partID);
+                stmt3.setString(2, salespersonID);
+                java.sql.Date date = new java.sql.Date(Calendar.getInstance().getTime().getTime());
+                stmt3.setDate(3, date);
+                stmt3.executeUpdate();
+                stmt3.close();
 
             }
             result.close();
             stmt1.close();
             stmt2.close();
-            stmt3.close();
         } catch (SQLException e) {
             System.out.println("Error selling part: " + e.getMessage());
         }
     }
 
-    // 5.3
-    // public static void managerMenu(Connection con, Scanner scanner){ }
+    // 5.3 operations for manager
+    public static void managerMenu(Connection con, Scanner scanner) {
+        boolean returnToMainMenu = false;
+        while (!returnToMainMenu) {
+            System.out.println();
+            System.out.println("-----Operations for salesperson menu-----");
+            System.out.println("What kinds of operation would you like to perform?");
+            System.out.println("1. List all salespersons");
+            System.out.println(
+                    "2. Count the number of transaction records of each salesperson within a given range on years of experience");
+            System.out.println("3. Show the total sales value for each manufacturer");
+            System.out.println("4. Show the N most popular parts");
+            System.out.println("5. Return to the main menu");
+            System.out.print("Enter Your Choice: ");
+            String input = scanner.nextLine();
+            switch (input) {
+                case "1":
+                    listAllSalesperson(con, scanner);
+                    break;
+                case "2":
+                    countSalespersonSales(con, scanner);
+                    break;
+                case "3":
+                    countManufacturerSales(con, scanner);
+                    break;
+                case "4":
+                    listMostPopularParts(con, scanner);
+                    break;
+                case "5":
+                    returnToMainMenu = true;
+                    break;
+                default:
+                    System.out.println("Invaild input");
+                    break;
+            }
+        }
+    }
+
+    // 5.3.1 List all salespersons
+    public static void listAllSalesperson(Connection con, Scanner scanner) {
+        try {
+            String ordering = new String("ASC");
+            System.out.println("Choose ordering");
+            System.out.println("1. By ascending order");
+            System.out.println("2. By desending order");
+            System.out.print("Choose the list ordering: ");
+            String input = scanner.nextLine();
+            switch (input) {
+                case "1":
+                    ordering = "ASC";
+                    break;
+                case "2":
+                    ordering = "DESC";
+                    break;
+                default:
+                    System.out.println("Invaild input");
+                    break;
+            }
+
+            Statement stmt = con.createStatement();
+            String query = String.format("SELECT * FROM salesperson ORDER BY sExperience %s", ordering);
+            ResultSet result = stmt.executeQuery(query);
+            String[] field = { "ID", "Name", "Mobile Phone", "Years of Experience" };
+            outputResult(result, field);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    // 5.3.2 Count the number of transaction records of each salesperson
+    public static void countSalespersonSales(Connection con, Scanner scanner) {
+        try {
+            String lowerBound = new String("0");
+            String upperBound = new String("1");
+            System.out.print("Type in lower bound for years of experience: ");
+            String lowerBoundInput = scanner.nextLine();
+            System.out.print("Type in uppper bound for years of experience: ");
+            String upperBoundInput = scanner.nextLine();
+
+            // check if input is an integer
+            try {
+                Integer.parseInt(lowerBoundInput);
+                Integer.parseInt(upperBoundInput);
+                lowerBound = lowerBoundInput;
+                upperBound = upperBoundInput;
+            } catch (Exception e) {
+                System.out.println("Invalid input!");
+            }
+
+            Statement stmt = con.createStatement();
+            String query = String.format(
+                    "SELECT sid,sname,sExperience,total FROM salesperson NATURAL JOIN (SELECT sid,count(*) as total FROM transaction GROUP BY sid) as VALUE WHERE sExperience>=%s AND sExperience <%s ORDER BY sid DESC",
+                    lowerBound, upperBound);
+            ResultSet result = stmt.executeQuery(query);
+            String[] field = { "ID", "Name", "Years of Experience", "Number of Transaction" };
+            outputResult(result, field);
+        } catch (Exception e) {
+            if (e instanceof NumberFormatException) {
+                System.out.println("Invalid Input!");
+            } else
+                System.out.println(e);
+        }
+    }
+
+    // 5.3.3 Sort and list the manufacturers
+    public static void countManufacturerSales(Connection con, Scanner scanner) {
+        try {
+            Statement stmt = con.createStatement();
+            // String query=new String("SELECT mID, mName, saleValue FROM manufacturer
+            // NATURAL JOIN (SELECT mID, SUM(saleCountPlusPID.saleCount*pPrice) as saleValue
+            // FROM part NATURAL JOIN (select pid,count(*) as saleCount FROM transaction
+            // GROUP BY pid) as saleCountPlusPID ) as saleValuePlusMID");
+            String query = "SELECT mID, mName, saleValue FROM manufacturer NATURAL JOIN (SELECT mID, SUM(saleCountPlusPID.saleCount*pPrice) as saleValue FROM part NATURAL JOIN (select pid,count(*) as saleCount FROM transaction GROUP BY pid) as saleCountPlusPID group by mID) as saleValuePlusMID ORDER BY saleValue DESC";
+            ResultSet result = stmt.executeQuery(query);
+            String[] field = { "Manufacturer ID", "Manufacturer Name", "Total Sales Value" };
+            outputResult(result, field);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    // 5.3.4 Show the N most popular parts
+    // 5.3.4 potential bug
+    public static void listMostPopularParts(Connection con, Scanner scanner) {
+        try {
+            System.out.print("Type in number of parts: ");
+            int N = 1;
+            String NInput = scanner.nextLine();
+            // check if input is an integer and greater than 0
+            int temp = Integer.parseInt(NInput);
+            if (temp < 0) {
+                throw new NumberFormatException();
+            } else
+                N = temp;
+
+            Statement stmt = con.createStatement();
+            String query = String.format(
+                    "select pID, pName, saleCount FROM part NATURAL JOIN ( select pid, count(*) as saleCount FROM transaction GROUP BY pid ) as SALE WHERE saleCount != 0 ORDER BY saleCount DESC LIMIT %s",
+                    N);
+            ResultSet result = stmt.executeQuery(query);
+            String[] field = { "Part ID", "Part Name", "No. of Transaction" };
+            outputResult(result, field);
+        } catch (Exception e) {
+            if (e instanceof NumberFormatException) {
+                System.out.println("Invalid Input!");
+            } else
+                System.out.println(e);
+        }
+    }
+
+    // unfinish, enter null value in field to use original column name
+    public static void outputResult(ResultSet result, String[] field) {
+        try {
+            ResultSetMetaData rsmd = result.getMetaData();
+            int columnCount = rsmd.getColumnCount();
+            if (field == null)
+                for (int i = 1; i <= columnCount; i++) {
+                    System.out.print("| " + rsmd.getColumnName(i) + " ");
+                }
+            else
+                for (int i = 0; i < field.length; i++) {
+                    System.out.print("| " + field[i] + " ");
+                }
+            System.out.println("|");
+
+            // Print records
+            while (result.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    String value = result.getString(i);
+                    if (rsmd.getColumnTypeName(i).equalsIgnoreCase("date")) {
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                        value = dateFormat.format(result.getDate(i));
+                    }
+                    System.out.print("| " + value + " ");
+                }
+                System.out.println("|");
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
 }
