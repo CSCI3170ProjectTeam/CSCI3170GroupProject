@@ -367,7 +367,6 @@ public class Main {
             result.next();
             int remaningQuantity = Integer.valueOf(result.getString(1));
             if (remaningQuantity <= 0) {
-                System.out.println("Error: Part Is Unavailable!");
                 return;
             } else {
                 // update part quantity
@@ -393,7 +392,8 @@ public class Main {
             stmt1.close();
             stmt2.close();
         } catch (SQLException e) {
-            System.out.println("Error selling part: " + e.getMessage());
+            System.out.println("Error: Part Is Unavailable!");
+            // System.out.println(e.getMessage());
         }
     }
 
