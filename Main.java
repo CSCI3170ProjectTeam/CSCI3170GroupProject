@@ -519,7 +519,6 @@ public class Main {
     }
 
     // 5.3.4 Show the N most popular parts
-    // 5.3.4 potential bug
     public static void listMostPopularParts(Connection con, Scanner scanner) {
         try {
             System.out.print("Type in number of parts: ");
@@ -547,7 +546,6 @@ public class Main {
         }
     }
 
-    // unfinish, enter null value in field to use original column name
     public static void outputResult(ResultSet result, String[] field) {
         try {
             ResultSetMetaData rsmd = result.getMetaData();
