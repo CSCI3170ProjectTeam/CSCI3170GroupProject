@@ -53,7 +53,7 @@ The Java program consists of the following functions:
 
    - **COUNT TRANSACTION NUMBERS OF SALESPERSON WITHIN EXPERIENCE YEAR RANGES**:
 
-     Count the number of transaction records of each salesperson within a given range on years of experience (e.g. from 2 year to 5 years) inclusively. After a specific range on years of experience is entered, the program will perform the query and return the ID, name, years of experience and number of transaction records of each salesperson within the range on years of experience specified by the user inclusively. These transaction records should be sorted in _descending_ order of Salesperson ID and outputted as a table
+     Count the number of transaction records of each salesperson within a given range on years of experience (e.g. from 2 year to 5 years) inclusively. After a specific range on years of experience is entered, the program will perform the query and return the ID, name, years of experience and number of transaction records of each salesperson within the range on years of experience specified by the user inclusively for the lower bound and exclusively for the upper bound. These transaction records should be sorted in _descending_ order of Salesperson ID and outputted as a table
 
    - **SORT AND LIST MANUFACTURERS IN DESC ORDER OF TOTAL SALES VALUE**:
 
