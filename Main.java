@@ -402,7 +402,7 @@ public class Main {
         boolean returnToMainMenu = false;
         while (!returnToMainMenu) {
             System.out.println();
-            System.out.println("-----Operations for salesperson menu-----");
+            System.out.println("-----Operations for manager menu-----");
             System.out.println("What kinds of operation would you like to perform?");
             System.out.println("1. List all salespersons");
             System.out.println(
