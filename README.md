@@ -65,6 +65,6 @@ The Java program consists of the following functions:
 
 ## Authors: Group27
 
-- Shang Feiyang 1155210365
-- Ngai Tsz Hin 1155172069
-- Fong Long Wai 1155177220
+- Feiyang
+- Tsz Hin
+- Long Wai
